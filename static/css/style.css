@@ -19,24 +19,45 @@ section.section.hidden { display: none !important; }
 /* Mobile responsive */
 @media (max-width: 640px) {
     body { font-size: 14px; }
-    header .max-w-7xl { padding-left: 12px; padding-right: 12px; }
+    header .max-w-7xl { padding-left: 8px; padding-right: 8px; }
     header .text-lg { font-size: 14px; }
     header .text-xs { font-size: 10px; }
-    header .w-10 { width: 32px; height: 32px; }
-    header .h-16 { height: 56px; }
-    nav { gap: 8px !important; }
-    nav button, nav a { font-size: 12px; padding: 6px 8px; }
+    header .w-10 { width: 28px; height: 28px; }
+    header .h-16 { height: auto; min-height: 56px; padding: 8px 0; }
+    header .flex { flex-wrap: wrap !important; justify-content: space-between !important; }
+    header .justify-between { justify-content: space-between !important; }
+    header > div { flex-wrap: wrap !important; }
+    header .gap-3 { gap: 6px !important; }
+    header .items-center { align-items: center !important; }
+    nav { 
+        order: 3; 
+        width: 100%; 
+        overflow-x: auto; 
+        gap: 4px !important; 
+        padding: 8px 0;
+        justify-content: flex-start !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    nav button, nav a { 
+        font-size: 11px; 
+        padding: 4px 8px; 
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    header .gap-4 { gap: 8px !important; }
+    header .px-4 { padding-left: 8px; padding-right: 8px; }
     main { padding: 12px !important; }
     .grid { gap: 12px !important; }
     .p-6 { padding: 12px !important; }
     .p-8 { padding: 16px !important; }
-    h1 { font-size: 24px !important; }
-    h2 { font-size: 20px !important; }
+    h1 { font-size: 20px !important; }
+    h2 { font-size: 18px !important; }
     h3 { font-size: 16px !important; }
     .text-xl { font-size: 16px; }
     .text-2xl { font-size: 20px; }
     .text-3xl { font-size: 24px; }
-    .text-4xl { font-size: 28px; }
+    .text-4xl { font-size: 24px; }
     .rounded-xl { border-radius: 8px; }
     .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .hidden { display: none !important; }
@@ -66,11 +87,15 @@ section.section.hidden { display: none !important; }
     #lessonEditForm .col-span-2 { grid-column: span 1 !important; }
     .prose { font-size: 14px; }
     .prose img { max-width: 100% !important; height: auto !important; }
+    header .justify-between > nav { order: 2; width: auto; }
+    header .justify-between > div:last-child { order: 3; }
+    header .justify-between > div:first-child { order: 1; }
 }
 
 /* Extra small phones */
 @media (max-width: 400px) {
     header .gap-3 { gap: 4px !important; }
-    nav { gap: 4px !important; }
+    nav { gap: 2px !important; }
+    nav button, nav a { font-size: 10px; padding: 4px 6px; }
     .grid-cols-4 { grid-template-columns: 1fr !important; }
 }
