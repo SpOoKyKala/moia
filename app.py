@@ -101,6 +101,11 @@ def init_db():
         )
     ''')
     
+    try:
+        cursor.execute('ALTER TABLE presentations ADD COLUMN slides_json TEXT')
+    except:
+        pass
+    
     admin = cursor.execute('SELECT id FROM users WHERE username = ?', ('admin',)).fetchone()
     if not admin:
         cursor.execute(
@@ -139,15 +144,7 @@ def index():
     conn = get_db_connection()
     pres = conn.execute('SELECT id, title, description, cover_image, pptx_filename FROM presentations ORDER BY order_num, created_at DESC').fetchall()
     conn.close()
-    presentations_data = []
-    for p in pres:
-        presentations_data.append({
-            'id': p['id'],
-            'title': p['title'],
-            'description': p['description'],
-            'cover_image': p['cover_image'],
-            'pptx_filename': p['pptx_filename']
-        })
+    presentations_data = [{'id': p['id'], 'title': p['title'], 'description': p['description'], 'cover_image': p['cover_image'], 'pptx_filename': p['pptx_filename']} for p in pres]
     return render_template('index.html', presentations_json=json.dumps(presentations_data, ensure_ascii=False))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -532,6 +529,7 @@ def admin_add_presentation():
     description = request.form.get('description', '').strip()
     cover_image = request.form.get('cover_image', '').strip()
     pptx_filename = request.form.get('pptx_filename', '').strip()
+    slides_json = request.form.get('slides_json', '').strip()
     order_num = request.form.get('order_num', '0').strip()
     
     if not title:
@@ -540,8 +538,8 @@ def admin_add_presentation():
     
     conn = get_db_connection()
     conn.execute(
-        'INSERT INTO presentations (title, description, cover_image, pptx_filename, order_num) VALUES (?, ?, ?, ?, ?)',
-        (title, description, cover_image, pptx_filename, order_num or 0)
+        'INSERT INTO presentations (title, description, cover_image, pptx_filename, slides_json, order_num) VALUES (?, ?, ?, ?, ?, ?)',
+        (title, description, cover_image, pptx_filename, slides_json, order_num or 0)
     )
     conn.commit()
     conn.close()
@@ -555,6 +553,7 @@ def admin_edit_presentation(pres_id):
     description = request.form.get('description', '').strip()
     cover_image = request.form.get('cover_image', '').strip()
     pptx_filename = request.form.get('pptx_filename', '').strip()
+    slides_json = request.form.get('slides_json', '').strip()
     order_num = request.form.get('order_num', '0').strip()
     
     if not title:
@@ -563,8 +562,8 @@ def admin_edit_presentation(pres_id):
     
     conn = get_db_connection()
     conn.execute(
-        'UPDATE presentations SET title = ?, description = ?, cover_image = ?, pptx_filename = ?, order_num = ? WHERE id = ?',
-        (title, description, cover_image, pptx_filename, order_num or 0, pres_id)
+        'UPDATE presentations SET title = ?, description = ?, cover_image = ?, pptx_filename = ?, slides_json = ?, order_num = ? WHERE id = ?',
+        (title, description, cover_image, pptx_filename, slides_json, order_num or 0, pres_id)
     )
     conn.commit()
     conn.close()
@@ -608,8 +607,17 @@ def upload_pptx():
         return jsonify({'error': 'Only pptx/ppt files allowed'}), 400
     
     filename = uuid.uuid4().hex[:16] + '.' + ext
-    filepath = 'static/uploads/presentations/' + filename
-    file.save(filepath)
+    file.save('static/uploads/presentations/' + filename)
+    
+    title = os.path.splitext(file.filename)[0]
+    
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO presentations (title, pptx_filename, order_num) VALUES (?, ?, (SELECT COALESCE(MAX(order_num), 0) + 1 FROM presentations))',
+        (title, filename)
+    )
+    conn.commit()
+    conn.close()
     
     return jsonify({'filename': filename, 'url': '/static/uploads/presentations/' + filename})
 
