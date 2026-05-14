@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - ТО и РКС{% endblock %}
+
+{% block nav %}
+<button onclick="showSection('home')" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Главная</button>
+<button onclick="showSection('atlas')" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Атлас</button>
+<button onclick="showSection('learning')" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Обучение</button>
+<button onclick="showSection('quest')" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Диагностика</button>
+<button onclick="showSection('dashboard')" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Профиль</button>
+<button onclick="openAboutModal()" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">О сайте</button>
+{% endblock %}
+
+{% block main %}
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <section id="homeSection" class="section">
+        <div class="text-center py-12">
+            <div class="w-24 h-24 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 p-2 shadow-sm border border-slate-200">
+                <img src="{{ url_for('static', filename='uploads/image-Photoroom.png') }}" class="w-full h-full object-contain rounded-xl">
+            </div>
+            <h1 class="text-4xl font-bold text-slate-900 mb-4">ТО и РКС</h1>
+            <p class="text-xl text-slate-600 mb-2">Техническое обслуживание и ремонт компьютерных систем</p>
+            <p class="text-slate-500 mb-8">Дипломный проект</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto mb-12">
+                <button onclick="showSection('atlas')" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 card-hover text-left">
+                    <i data-lucide="cpu" class="w-8 h-8 text-blue-600 mb-3"></i>
+                    <h3 class="font-semibold text-slate-900 mb-1">Атлас оборудования</h3>
+                    <p class="text-sm text-slate-500">Интерактивная схема материнской платы</p>
+                </button>
+                <button onclick="showSection('learning')" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 card-hover text-left">
+                    <i data-lucide="book-open" class="w-8 h-8 text-blue-600 mb-3"></i>
+                    <h3 class="font-semibold text-slate-900 mb-1">Обучение</h3>
+                    <p class="text-sm text-slate-500">Мультимедийные материалы</p>
+                </button>
+                <button onclick="showSection('quest')" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 card-hover text-left">
+                    <i data-lucide="wrench" class="w-8 h-8 text-blue-600 mb-3"></i>
+                    <h3 class="font-semibold text-slate-900 mb-1">Диагностика</h3>
+                    <p class="text-sm text-slate-500">Практикум по ремонту</p>
+                </button>
+                <button onclick="showSection('dashboard')" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 card-hover text-left">
+                    <i data-lucide="user" class="w-8 h-8 text-blue-600 mb-3"></i>
+                    <h3 class="font-semibold text-slate-900 mb-1">Профиль</h3>
+                    <p class="text-sm text-slate-500">Прогресс и достижения</p>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    {% include 'sections/atlas.html' %}
+    {% include 'sections/learning.html' %}
+    {% include 'sections/quest.html' %}
+    {% include 'sections/dashboard.html' %}
+</main>
+{% endblock %}
+
+{% block modals %}
+{% include 'modals/profile.html' %}
+{% include 'modals/about.html' %}
+{% include 'modals/lesson.html' %}
+{% include 'modals/quiz.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

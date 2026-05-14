@@ -1,0 +1,44 @@
+<div id="aboutModal" class="fixed inset-0 bg-black/50 modal-overlay z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-blue-600 text-white p-6 rounded-t-xl flex items-center justify-between">
+            <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i data-lucide="info" class="w-5 h-5"></i>
+                О сайте
+            </h3>
+            <button onclick="closeAboutModal()" class="text-white/80 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="p-6">
+            <div class="text-center mb-6">
+                <img src="{{ url_for('static', filename='uploads/image-Photoroom.png') }}" class="w-24 h-24 mx-auto rounded-xl object-contain mb-4">
+                <h2 class="text-xl font-bold text-slate-900">ТО и РКС</h2>
+                <p class="text-slate-500">Техническое обслуживание и ремонт компьютерных систем</p>
+            </div>
+            <div class="space-y-4 text-sm text-slate-600">
+                <p>Данный учебный курс разработан для изучения основ технического обслуживания и ремонта компьютерных систем.</p>
+                <p>Курс включает:</p>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>Интерактивный атлас оборудования</li>
+                    <li>Обучающие модули по диагностике и ремонту</li>
+                    <li>Практикум по поиску неисправностей</li>
+                    <li>Систему отслеживания прогресса</li>
+                </ul>
+                <p class="pt-4 text-slate-500 text-xs">Дипломный проект 2026</p>
+            </div>
+            {% if session.get('is_admin') %}
+            <div class="mt-6 pt-4 border-t border-slate-200">
+                <p class="text-xs text-slate-500 mb-2">Debug опции:</p>
+                <div class="flex gap-2">
+                    <button onclick="resetProgress()" class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-2 px-3 rounded-lg text-xs transition">
+                        Сбросить прогресс
+                    </button>
+                    <button onclick="showDebugInfo()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-3 rounded-lg text-xs transition">
+                        Отладка
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

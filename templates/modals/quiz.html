@@ -1,0 +1,22 @@
+<div id="quizModal" class="fixed inset-0 bg-black/50 modal-overlay z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto" id="quizModalContent">
+        <div class="sticky top-0 bg-green-600 text-white p-6 rounded-t-xl">
+            <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+                Тест для подтверждения модуля
+            </h3>
+            <p id="quizModuleTitle" class="text-sm text-green-100 mt-1"></p>
+        </div>
+        <div class="p-6">
+            <p class="text-sm text-slate-500 mb-4">Ответьте на все вопросы для подтверждения прохождения модуля (минимум 60%)</p>
+            <div id="quizQuestions" class="space-y-4 mb-6"></div>
+            <button onclick="submitQuiz()" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium flex items-center justify-center gap-2">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
+                Завершить тест
+            </button>
+            <button onclick="closeQuizModal()" class="w-full mt-3 text-slate-500 hover:text-slate-700 py-2 text-sm">
+                Отмена
+            </button>
+        </div>
+    </div>
+</div>

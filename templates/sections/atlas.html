@@ -1,0 +1,30 @@
+<section id="atlasSection" class="section hidden">
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-slate-900">Интерактивный атлас оборудования</h2>
+        <p class="text-slate-600 mt-1">Нажмите на горячие точки для просмотра технических характеристик</p>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 relative bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div id="atlasContainer" class="relative w-full aspect-[4/3] bg-slate-50">
+                <img id="motherboardImage" src="https://i.pinimg.com/originals/b1/e1/37/b1e1372e58611b2a26455ebf7ce01f1e.jpg" 
+                     alt="Материнская плата" class="absolute inset-0 w-full h-full object-contain"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="absolute inset-0 bg-slate-100 flex-col items-center justify-center hidden">
+                    <i data-lucide="cpu" class="w-16 h-16 text-slate-300 mb-4"></i>
+                    <p class="text-slate-400 text-sm">Изображение материнской платы</p>
+                    <p class="text-slate-300 text-xs mt-1">Нажмите на горячие точки для просмотра компонентов</p>
+                </div>
+                <!-- HOTSPOTS RENDER HERE -->
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 class="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <i data-lucide="info" class="w-5 h-5 text-blue-600"></i>
+                Компонент
+            </h3>
+            <div id="componentInfo">
+                <p class="text-slate-600 text-sm">Выберите компонент на изображении</p>
+            </div>
+        </div>
+    </div>
+</section>
