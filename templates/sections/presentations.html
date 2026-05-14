@@ -30,6 +30,10 @@
                     <p id="viewerDesc" class="text-sm text-slate-400"></p>
                 </div>
             </div>
+            <a id="downloadBtn" href="#" download class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition flex items-center gap-2">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                Скачать
+            </a>
         </div>
         <div class="flex-1 overflow-hidden">
             <iframe id="pptxFrame" class="w-full h-full border-0" src=""></iframe>
@@ -79,13 +83,17 @@ function openPresentation(idx) {
     document.getElementById('viewerTitle').textContent = pres.title;
     document.getElementById('viewerDesc').textContent = pres.description || '';
     
+    var downloadBtn = document.getElementById('downloadBtn');
     var frame = document.getElementById('pptxFrame');
     
     if (pres.pptx_filename) {
+        downloadBtn.href = '/static/uploads/presentations/' + pres.pptx_filename;
+        
         var host = window.location.origin;
         var pptxUrl = encodeURIComponent(host + '/static/uploads/presentations/' + pres.pptx_filename);
         frame.src = 'https://view.officeapps.live.com/op/embed.aspx?src=' + pptxUrl + '&wdHideTabs=true&wdDownloadButton=0';
     } else {
+        downloadBtn.href = '#';
         frame.src = '';
     }
     
