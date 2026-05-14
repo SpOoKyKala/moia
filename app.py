@@ -609,16 +609,6 @@ def upload_pptx():
     filename = uuid.uuid4().hex[:16] + '.' + ext
     file.save('static/uploads/presentations/' + filename)
     
-    title = os.path.splitext(file.filename)[0]
-    
-    conn = get_db_connection()
-    conn.execute(
-        'INSERT INTO presentations (title, pptx_filename, order_num) VALUES (?, ?, (SELECT COALESCE(MAX(order_num), 0) + 1 FROM presentations))',
-        (title, filename)
-    )
-    conn.commit()
-    conn.close()
-    
     return jsonify({'filename': filename, 'url': '/static/uploads/presentations/' + filename})
 
 if __name__ == '__main__':
