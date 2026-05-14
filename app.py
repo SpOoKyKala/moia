@@ -88,6 +88,19 @@ def init_db():
         )
     ''')
     
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS presentations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            cover_image TEXT,
+            pptx_filename TEXT,
+            slides_json TEXT,
+            order_num INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
     admin = cursor.execute('SELECT id FROM users WHERE username = ?', ('admin',)).fetchone()
     if not admin:
         cursor.execute(
@@ -123,7 +136,19 @@ def admin_required(f):
 def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html')
+    conn = get_db_connection()
+    pres = conn.execute('SELECT id, title, description, cover_image, pptx_filename FROM presentations ORDER BY order_num, created_at DESC').fetchall()
+    conn.close()
+    presentations_data = []
+    for p in pres:
+        presentations_data.append({
+            'id': p['id'],
+            'title': p['title'],
+            'description': p['description'],
+            'cover_image': p['cover_image'],
+            'pptx_filename': p['pptx_filename']
+        })
+    return render_template('index.html', presentations_json=json.dumps(presentations_data, ensure_ascii=False))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -471,8 +496,126 @@ def upload_base64():
     except Exception as e:
         return jsonify({'error': type(e).__name__ + ': ' + str(e)}), 500
 
+@app.route('/presentations')
+def presentations():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    conn = get_db_connection()
+    pres = conn.execute('SELECT * FROM presentations ORDER BY order_num, created_at DESC').fetchall()
+    conn.close()
+    return render_template('presentations.html', presentations=pres)
+
+@app.route('/presentation/<int:pres_id>')
+def presentation_view(pres_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    conn = get_db_connection()
+    pres = conn.execute('SELECT * FROM presentations WHERE id = ?', (pres_id,)).fetchone()
+    conn.close()
+    if not pres:
+        flash('Презентация не найдена', 'error')
+        return redirect(url_for('presentations'))
+    return render_template('presentation_view.html', presentation=pres)
+
+@app.route('/admin/presentations')
+@admin_required
+def admin_presentations():
+    conn = get_db_connection()
+    pres = conn.execute('SELECT * FROM presentations ORDER BY order_num, created_at DESC').fetchall()
+    conn.close()
+    return render_template('admin_presentations.html', presentations=pres)
+
+@app.route('/admin/presentation/add', methods=['POST'])
+@admin_required
+def admin_add_presentation():
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    cover_image = request.form.get('cover_image', '').strip()
+    pptx_filename = request.form.get('pptx_filename', '').strip()
+    order_num = request.form.get('order_num', '0').strip()
+    
+    if not title:
+        flash('Введите название', 'error')
+        return redirect(url_for('admin_presentations'))
+    
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO presentations (title, description, cover_image, pptx_filename, order_num) VALUES (?, ?, ?, ?, ?)',
+        (title, description, cover_image, pptx_filename, order_num or 0)
+    )
+    conn.commit()
+    conn.close()
+    flash('Презентация добавлена', 'success')
+    return redirect(url_for('admin_presentations'))
+
+@app.route('/admin/presentation/edit/<int:pres_id>', methods=['POST'])
+@admin_required
+def admin_edit_presentation(pres_id):
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    cover_image = request.form.get('cover_image', '').strip()
+    pptx_filename = request.form.get('pptx_filename', '').strip()
+    order_num = request.form.get('order_num', '0').strip()
+    
+    if not title:
+        flash('Введите название', 'error')
+        return redirect(url_for('admin_presentations'))
+    
+    conn = get_db_connection()
+    conn.execute(
+        'UPDATE presentations SET title = ?, description = ?, cover_image = ?, pptx_filename = ?, order_num = ? WHERE id = ?',
+        (title, description, cover_image, pptx_filename, order_num or 0, pres_id)
+    )
+    conn.commit()
+    conn.close()
+    flash('Презентация обновлена', 'success')
+    return redirect(url_for('admin_presentations'))
+
+@app.route('/admin/presentation/delete/<int:pres_id>', methods=['POST'])
+@admin_required
+def admin_delete_presentation(pres_id):
+    import os
+    conn = get_db_connection()
+    pres = conn.execute('SELECT cover_image, pptx_filename FROM presentations WHERE id = ?', (pres_id,)).fetchone()
+    if pres:
+        if pres['cover_image']:
+            cover_path = 'static/uploads/lessons/' + pres['cover_image']
+            if os.path.exists(cover_path):
+                os.remove(cover_path)
+        if pres['pptx_filename']:
+            pptx_path = 'static/uploads/presentations/' + pres['pptx_filename']
+            if os.path.exists(pptx_path):
+                os.remove(pptx_path)
+    conn.execute('DELETE FROM presentations WHERE id = ?', (pres_id,))
+    conn.commit()
+    conn.close()
+    flash('Презентация удалена', 'success')
+    return redirect(url_for('admin_presentations'))
+
+@app.route('/upload_pptx', methods=['POST'])
+def upload_pptx():
+    import os, uuid
+    
+    os.makedirs('static/uploads/presentations', exist_ok=True)
+    
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    file = request.files['file']
+    if not file.filename:
+        return jsonify({'error': 'No file selected'}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else 'pptx'
+    if ext not in ['pptx', 'ppt']:
+        return jsonify({'error': 'Only pptx/ppt files allowed'}), 400
+    
+    filename = uuid.uuid4().hex[:16] + '.' + ext
+    filepath = 'static/uploads/presentations/' + filename
+    file.save(filepath)
+    
+    return jsonify({'filename': filename, 'url': '/static/uploads/presentations/' + filename})
+
 if __name__ == '__main__':
     import os
     os.makedirs('static/uploads/lessons', exist_ok=True)
+    os.makedirs('static/uploads/presentations', exist_ok=True)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)

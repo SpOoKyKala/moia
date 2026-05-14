@@ -29,7 +29,8 @@ const ICONS = {
     'home': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
     'map': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>',
     'alert-triangle': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
-    'arrow-right': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'
+    'arrow-right': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+    'presentation': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 7h18"/><path d="M7 12h10"/><path d="M7 17h6"/></svg>'
 };
 
 function replaceIcons() {
@@ -926,11 +927,12 @@ function showSection(section) {
     if (target) target.classList.remove('hidden');
     if (section === 'quest') nextQuest();
     if (section === 'dashboard') renderDashboard();
+    if (section === 'presentations' && typeof initPresentations === 'function') initPresentations();
     replaceIcons();
 }
 
 function renderHotspots() {
-    const container = document.getElementById('atlasContainer');
+    const container = document.getElementById('atlas2D');
     if (!container) return;
     
     const existing = container.querySelectorAll('.hotspot');
@@ -946,7 +948,10 @@ function renderHotspots() {
     });
 }
 
-function showComponentInfo(comp) {
+function showComponentInfo(compOrId) {
+    const comp = typeof compOrId === 'string' ? ATLAS_COMPONENTS.find(c => c.id === compOrId) : compOrId;
+    if (!comp) return;
+    
     const visited = state.visitedComponents || [];
     if (!visited.includes(comp.id)) {
         visited.push(comp.id);
@@ -958,7 +963,7 @@ function showComponentInfo(comp) {
     if (info) {
         info.innerHTML = '<h4 class="font-semibold text-slate-900 mb-2">' + comp.name + '</h4>' +
             '<div class="space-y-3 text-sm">' +
-                '<div><span class="font-medium text-slate-700">Характеристики:</span><p class="text-slate-600">' + comp.specs + '</p></div>' +
+                '<div><span class="font-medium text-slate-700">Характеристики:</span><p class="text-slate-600">' + comp.specs.replace(/<br>/g, ', ') + '</p></div>' +
                 '<div><span class="font-medium text-red-600">Неисправности:</span><p class="text-slate-600">' + comp.failures + '</p></div>' +
                 '<div><span class="font-medium text-green-600">Диагностика:</span><p class="text-slate-600">' + comp.diagnostics + '</p></div></div>';
     }

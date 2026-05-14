@@ -6,9 +6,12 @@
     <title>{% block title %}ТО и РКС{% endblock %}</title>
     <link rel="icon" href="{{ url_for('static', filename='uploads/image-Photoroom.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     {% block extra_head %}{% endblock %}
+    <script>var IS_ADMIN = {{ 'true' if session.get('is_admin') else 'false' }};</script>
 </head>
 <body class="text-slate-800 min-h-screen">
     {% block header %}

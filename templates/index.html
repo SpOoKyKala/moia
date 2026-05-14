@@ -7,6 +7,7 @@
 <button onclick="showSection('atlas')" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Атлас</button>
 <button onclick="showSection('learning')" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Обучение</button>
 <button onclick="showSection('quest')" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Диагностика</button>
+<button onclick="showSection('presentations')" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Презентации</button>
 <button onclick="showSection('dashboard')" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">Профиль</button>
 <button onclick="openAboutModal()" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition">О сайте</button>
 {% endblock %}
@@ -22,7 +23,7 @@
             <p class="text-xl text-slate-600 mb-2">Техническое обслуживание и ремонт компьютерных систем</p>
             <p class="text-slate-500 mb-8">Дипломный проект</p>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-5xl mx-auto mb-12">
                 <button onclick="showSection('atlas')" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 card-hover text-left">
                     <i data-lucide="cpu" class="w-8 h-8 text-blue-600 mb-3"></i>
                     <h3 class="font-semibold text-slate-900 mb-1">Атлас оборудования</h3>
@@ -32,6 +33,11 @@
                     <i data-lucide="book-open" class="w-8 h-8 text-blue-600 mb-3"></i>
                     <h3 class="font-semibold text-slate-900 mb-1">Обучение</h3>
                     <p class="text-sm text-slate-500">Мультимедийные материалы</p>
+                </button>
+                <button onclick="showSection('presentations')" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 card-hover text-left">
+                    <i data-lucide="presentation" class="w-8 h-8 text-blue-600 mb-3"></i>
+                    <h3 class="font-semibold text-slate-900 mb-1">Презентации</h3>
+                    <p class="text-sm text-slate-500">Инфоуроки</p>
                 </button>
                 <button onclick="showSection('quest')" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 card-hover text-left">
                     <i data-lucide="wrench" class="w-8 h-8 text-blue-600 mb-3"></i>
@@ -51,6 +57,7 @@
     {% include 'sections/learning.html' %}
     {% include 'sections/quest.html' %}
     {% include 'sections/dashboard.html' %}
+    {% include 'sections/presentations.html' %}
 </main>
 {% endblock %}
 

@@ -26,6 +26,10 @@
                 <button onclick="showTab('stats', this)" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-700">Статистика</button>
                 <button onclick="showTab('users', this)" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">Пользователи</button>
                 <button onclick="showTab('courses', this)" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 text-slate-600 hover:bg-slate-200">Курсы</button>
+                <a href="{{ url_for('admin_presentations') }}" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 7h18"/></svg>
+                    Презентации
+                </a>
             </div>
         </div>
         

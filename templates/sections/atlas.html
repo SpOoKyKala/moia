@@ -1,20 +1,73 @@
 <section id="atlasSection" class="section hidden">
     <div class="mb-8">
-        <h2 class="text-2xl font-bold text-slate-900">Интерактивный атлас оборудования</h2>
-        <p class="text-slate-600 mt-1">Нажмите на горячие точки для просмотра технических характеристик</p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900">Интерактивный атлас оборудования</h2>
+                <p class="text-slate-600 mt-1">Нажмите на компоненты для просмотра технических характеристик</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="switchAtlasMode('2d')" id="btn2d" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">
+                    2D Режим
+                </button>
+                <button onclick="switchAtlasMode('3d')" id="btn3d" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-300">
+                    3D Модель
+                </button>
+            </div>
+        </div>
     </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 relative bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div id="atlasContainer" class="relative w-full aspect-[4/3] bg-slate-50">
+            <!-- 2D Mode -->
+            <div id="atlas2D" class="relative w-full aspect-[4/3] bg-slate-50">
+                <div class="absolute top-3 left-3 bg-slate-800 text-white px-3 py-1 rounded-full text-xs font-medium z-10">
+                    🖥️ ASUS X99-E WS
+                </div>
                 <img id="motherboardImage" src="https://i.pinimg.com/originals/b1/e1/37/b1e1372e58611b2a26455ebf7ce01f1e.jpg" 
                      alt="Материнская плата" class="absolute inset-0 w-full h-full object-contain"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div class="absolute inset-0 bg-slate-100 flex-col items-center justify-center hidden">
                     <i data-lucide="cpu" class="w-16 h-16 text-slate-300 mb-4"></i>
                     <p class="text-slate-400 text-sm">Изображение материнской платы</p>
-                    <p class="text-slate-300 text-xs mt-1">Нажмите на горячие точки для просмотра компонентов</p>
                 </div>
-                <!-- HOTSPOTS RENDER HERE -->
+            </div>
+
+            <!-- 3D Mode -->
+            <div id="atlas3D" class="hidden w-full aspect-[4/3] bg-gradient-to-b from-slate-800 to-slate-900 relative">
+                <div class="absolute top-3 left-3 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium z-10">
+                    🎮 MSI Z790 Gaming WiFi
+                </div>
+                <canvas id="motherboard3D"></canvas>
+                <div class="absolute bottom-4 left-4 text-white/60 text-xs">
+                    <p>🖱️ Вращение: ЛКМ</p>
+                    <p>🔍 Масштаб: Колесо</p>
+                    <p>👆 Клик на компонент для информации</p>
+                </div>
+                <button onclick="toggleDebugPanel()" class="absolute top-4 right-4 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-xs {% if not session.get('is_admin') %}hidden{% endif %}">
+                    ⚙️ Настроить точки
+                </button>
+                <div id="debugPanel" class="hidden absolute top-12 right-4 bg-slate-900/95 backdrop-blur text-white p-4 rounded-lg w-72 max-h-80 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-bold text-sm">Настройка точек</h4>
+                        <button onclick="toggleDebugPanel()" class="text-white/60 hover:text-white">✕</button>
+                    </div>
+                    <div id="markerControls" class="space-y-3"></div>
+                    <button onclick="saveMarkerPositions()" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 py-2 rounded text-sm font-medium">
+                        💾 Сохранить координаты
+                    </button>
+                    <button onclick="exportPositions()" class="mt-2 w-full bg-slate-700 hover:bg-slate-600 py-2 rounded text-sm">
+                        📋 Скопировать JSON
+                    </button>
+                </div>
+                <!-- 3D Tooltips -->
+                <div id="tooltip3D" class="absolute hidden bg-white/95 backdrop-blur-sm rounded-lg shadow-xl p-4 max-w-xs pointer-events-none z-10">
+                    <h4 id="tooltipTitle" class="font-bold text-slate-900 mb-1"></h4>
+                    <p id="tooltipSpecs" class="text-sm text-slate-600 mb-2"></p>
+                    <div class="border-t border-slate-200 pt-2">
+                        <p class="text-xs text-red-600 font-medium">Неисправности:</p>
+                        <p id="tooltipFailures" class="text-xs text-slate-600"></p>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -23,8 +76,373 @@
                 Компонент
             </h3>
             <div id="componentInfo">
-                <p class="text-slate-600 text-sm">Выберите компонент на изображении</p>
+                <p class="text-slate-600 text-sm">Выберите компонент на изображении или 3D модели</p>
             </div>
         </div>
     </div>
 </section>
+
+<script>
+let threeScene, threeCamera, threeRenderer, threeModel;
+let raycaster, mouse;
+let is3DInitialized = false;
+
+const COMPONENT_POSITIONS = {
+    'socket_2011_3': { x: 0, y: 0.869, z: 0.28, name: 'Socket 2011-3' },
+    'ddr4_slots': { x: 0.869, y: 0.855, z: 0.28, name: 'DDR4 DIMM' },
+    'vrm': { x: -0.41, y: 1.719, z: 0.28, name: 'VRM' },
+    'chipset_x99': { x: 0.817, y: -0.923, z: 0.28, name: 'Chipset X99' },
+    'pcie_x16': { x: -0.55, y: -0.432, z: 0.28, name: 'PCIe x16' },
+    'usb31_headers': { x: 1.421, y: 0.396, z: 0.33, name: 'USB 3.1 Headers' },
+    'sata_express': { x: 0.086, y: -1.891, z: 0.28, name: 'SATA Express' },
+    'bios_chip': { x: -1.514, y: -1.741, z: 0.28, name: 'BIOS Chip' },
+    'lan_ports': { x: -1.901, y: 0.646, z: 0.35, name: 'LAN Intel I210' }
+};
+
+function switchAtlasMode(mode) {
+    const btn2d = document.getElementById('btn2d');
+    const btn3d = document.getElementById('btn3d');
+    const atlas2D = document.getElementById('atlas2D');
+    const atlas3D = document.getElementById('atlas3D');
+    
+    if (mode === '2d') {
+        atlas2D.classList.remove('hidden');
+        atlas3D.classList.add('hidden');
+        btn2d.className = 'px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium';
+        btn3d.className = 'px-4 py-2 rounded-lg bg-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-300';
+    } else {
+        atlas2D.classList.add('hidden');
+        atlas3D.classList.remove('hidden');
+        btn2d.className = 'px-4 py-2 rounded-lg bg-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-300';
+        btn3d.className = 'px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium';
+        if (!is3DInitialized) init3D();
+    }
+}
+
+function init3D() {
+    const canvas = document.getElementById('motherboard3D');
+    const container = canvas.parentElement;
+    
+    threeScene = new THREE.Scene();
+    
+    threeCamera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    threeCamera.position.set(0, 0, 2.5);
+    threeCamera.lookAt(0, 0, 0);
+    
+    threeRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    threeRenderer.setSize(container.clientWidth, container.clientHeight);
+    threeRenderer.setPixelRatio(window.devicePixelRatio);
+    threeRenderer.outputEncoding = THREE.sRGBEncoding;
+    
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    threeScene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 5, 5);
+    threeScene.add(directionalLight);
+    
+    const pointLight = new THREE.PointLight(0x4488ff, 0.5);
+    pointLight.position.set(-2, 3, 2);
+    threeScene.add(pointLight);
+    
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+        '/static/models/motherboard/motherboard_msi_z790_low_poly.glb',
+        function(gltf) {
+            threeModel = gltf.scene;
+            
+            const box = new THREE.Box3().setFromObject(threeModel);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize();
+            
+            threeModel.position.sub(center);
+            
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 3 / maxDim;
+            threeModel.scale.set(scale, scale, scale);
+            
+            threeScene.add(threeModel);
+            createInteractiveMarkers(center, size);
+            setTimeout(loadSavedPositions, 500);
+        },
+        undefined,
+        function(error) {
+            console.error('Error loading model:', error);
+        }
+    );
+    
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+    
+    canvas.addEventListener('click', on3DClick);
+    canvas.addEventListener('mousemove', on3DMouseMove);
+    
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    
+    canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+    
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging && threeModel) {
+            const deltaX = e.clientX - previousMousePosition.x;
+            const deltaY = e.clientY - previousMousePosition.y;
+            
+            const rotationSpeed = 0.01;
+            threeModel.rotation.y += deltaX * rotationSpeed;
+            threeModel.rotation.x = Math.max(-0.5, Math.min(0.5, threeModel.rotation.x + deltaY * rotationSpeed));
+            
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        }
+    });
+    
+    canvas.addEventListener('mouseup', () => isDragging = false);
+    canvas.addEventListener('mouseleave', () => isDragging = false);
+    
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY * 0.01;
+        const direction = new THREE.Vector3();
+        threeCamera.getWorldDirection(direction);
+        threeCamera.position.addScaledVector(direction, delta);
+        const dist = threeCamera.position.length();
+        threeCamera.position.setLength(Math.max(2, Math.min(10, dist)));
+    });
+    
+    animate3D();
+    is3DInitialized = true;
+}
+
+const interactiveObjects = [];
+
+function createInteractiveMarkers(modelCenter, modelSize) {
+    const markerGeometry = new THREE.SphereGeometry(0.08, 32, 32);
+    const markerMaterial = new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 1.0 });
+    
+    Object.keys(COMPONENT_POSITIONS).forEach((key) => {
+        const marker = new THREE.Mesh(markerGeometry, markerMaterial.clone());
+        const pos = COMPONENT_POSITIONS[key];
+        
+        marker.position.set(pos.x, pos.y, pos.z);
+        marker.userData = { id: key, name: COMPONENT_POSITIONS[key].name };
+        
+        threeModel.add(marker);
+        interactiveObjects.push(marker);
+    });
+}
+
+function on3DClick(event) {
+    const canvas = document.getElementById('motherboard3D');
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, threeCamera);
+    const intersects = raycaster.intersectObjects(interactiveObjects);
+    
+    if (intersects.length > 0) {
+        const component = intersects[0].object.userData;
+        showComponentInfo(component.id);
+        highlightMarker(intersects[0].object);
+    }
+}
+
+function on3DMouseMove(event) {
+    const canvas = document.getElementById('motherboard3D');
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, threeCamera);
+    const intersects = raycaster.intersectObjects(interactiveObjects);
+    
+    const tooltip = document.getElementById('tooltip3D');
+    if (intersects.length > 0) {
+        const comp = intersects[0].object.userData;
+        const data = ATLAS_COMPONENTS.find(c => c.id === comp.id);
+        if (data) {
+            document.getElementById('tooltipTitle').textContent = data.name;
+            document.getElementById('tooltipSpecs').innerHTML = data.specs.replace(/<br>/g, ' ');
+            document.getElementById('tooltipFailures').textContent = data.failures;
+            tooltip.style.left = (event.clientX - rect.left + 15) + 'px';
+            tooltip.style.top = (event.clientY - rect.top - 10) + 'px';
+            tooltip.classList.remove('hidden');
+            canvas.style.cursor = 'pointer';
+        }
+    } else {
+        tooltip.classList.add('hidden');
+        canvas.style.cursor = 'grab';
+    }
+}
+
+function highlightMarker(marker) {
+    marker.material.color.setHex(0x22c55e);
+    setTimeout(() => {
+        marker.material.color.setHex(0x3b82f6);
+    }, 500);
+}
+
+function showComponentInfo(id) {
+    const component = ATLAS_COMPONENTS.find(c => c.id === id);
+    if (!component) return;
+    
+    const info = document.getElementById('componentInfo');
+    info.innerHTML = `
+        <div class="space-y-4">
+            <div>
+                <h4 class="font-semibold text-slate-900 mb-2">${component.name}</h4>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-3">
+                <p class="text-xs font-medium text-slate-500 mb-1">Характеристики</p>
+                <p class="text-sm text-slate-700">${component.specs.replace(/<br>/g, ', ')}</p>
+            </div>
+            <div class="bg-red-50 rounded-lg p-3">
+                <p class="text-xs font-medium text-red-600 mb-1">Типичные неисправности</p>
+                <p class="text-sm text-slate-700">${component.failures}</p>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-3">
+                <p class="text-xs font-medium text-blue-600 mb-1">Диагностика</p>
+                <p class="text-sm text-slate-700">${component.diagnostics}</p>
+            </div>
+        </div>
+    `;
+}
+
+function animate3D() {
+    requestAnimationFrame(animate3D);
+    threeRenderer.render(threeScene, threeCamera);
+}
+
+window.addEventListener('resize', () => {
+    if (is3DInitialized && threeCamera && threeRenderer) {
+        const canvas = document.getElementById('motherboard3D');
+        const container = canvas.parentElement;
+        threeCamera.aspect = container.clientWidth / container.clientHeight;
+        threeCamera.updateProjectionMatrix();
+        threeRenderer.setSize(container.clientWidth, container.clientHeight);
+    }
+});
+
+let selectedMarker = null;
+
+function toggleDebugPanel() {
+    if (typeof IS_ADMIN !== 'undefined' && !IS_ADMIN) return;
+    const panel = document.getElementById('debugPanel');
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) {
+        renderMarkerControls();
+    }
+}
+
+function renderMarkerControls() {
+    const container = document.getElementById('markerControls');
+    container.innerHTML = '';
+    
+    const markerMap = {};
+    interactiveObjects.forEach(m => {
+        markerMap[m.userData.id] = m;
+    });
+    
+    Object.keys(COMPONENT_POSITIONS).forEach(key => {
+        const marker = markerMap[key];
+        if (!marker) return;
+        
+        const pos = COMPONENT_POSITIONS[key];
+        const name = pos.name;
+        
+        const div = document.createElement('div');
+        div.className = 'bg-slate-800 p-2 rounded';
+        div.innerHTML = `
+            <div class="text-xs font-medium mb-2 text-blue-400">${name}</div>
+            <div class="grid grid-cols-3 gap-2 text-xs">
+                <div>
+                    <span class="text-white/60">X</span>
+                    <input type="number" step="0.01" value="${marker.position.x.toFixed(3)}" 
+                           oninput="moveMarker('${key}', 'x', this.value)"
+                           class="w-full bg-slate-700 border border-slate-600 rounded px-1 py-1 text-center">
+                </div>
+                <div>
+                    <span class="text-white/60">Y</span>
+                    <input type="number" step="0.01" value="${marker.position.y.toFixed(3)}" 
+                           oninput="moveMarker('${key}', 'y', this.value)"
+                           class="w-full bg-slate-700 border border-slate-600 rounded px-1 py-1 text-center">
+                </div>
+                <div>
+                    <span class="text-white/60">Z</span>
+                    <input type="number" step="0.01" value="${marker.position.z.toFixed(3)}" 
+                           oninput="moveMarker('${key}', 'z', this.value)"
+                           class="w-full bg-slate-700 border border-slate-600 rounded px-1 py-1 text-center">
+                </div>
+            </div>
+            <div class="flex gap-1 mt-2">
+                <button onclick="adjustMarker('${key}', 'x', 0.05)" class="flex-1 bg-slate-700 hover:bg-slate-600 py-1 rounded text-xs">←X</button>
+                <button onclick="adjustMarker('${key}', 'x', -0.05)" class="flex-1 bg-slate-700 hover:bg-slate-600 py-1 rounded text-xs">X→</button>
+                <button onclick="adjustMarker('${key}', 'y', 0.05)" class="flex-1 bg-slate-700 hover:bg-slate-600 py-1 rounded text-xs">↑Y</button>
+                <button onclick="adjustMarker('${key}', 'y', -0.05)" class="flex-1 bg-slate-700 hover:bg-slate-600 py-1 rounded text-xs">Y↓</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function moveMarker(id, axis, value) {
+    const marker = interactiveObjects.find(m => m.userData.id === id);
+    if (marker) {
+        marker.position[axis] = parseFloat(value);
+    }
+}
+
+function adjustMarker(id, axis, delta) {
+    const marker = interactiveObjects.find(m => m.userData.id === id);
+    if (marker) {
+        marker.position[axis] += delta;
+        renderMarkerControls();
+    }
+}
+
+function saveMarkerPositions() {
+    const positions = {};
+    interactiveObjects.forEach(m => {
+        positions[m.userData.id] = {
+            x: parseFloat(m.position.x.toFixed(3)),
+            y: parseFloat(m.position.y.toFixed(3)),
+            z: parseFloat(m.position.z.toFixed(3))
+        };
+    });
+    localStorage.setItem('motherboard_markers', JSON.stringify(positions));
+    alert('Сохранено! Теперь обнови страницу и точки останутся на месте.');
+}
+
+function exportPositions() {
+    const positions = {};
+    interactiveObjects.forEach(m => {
+        positions[m.userData.id] = {
+            x: parseFloat(m.position.x.toFixed(3)),
+            y: parseFloat(m.position.y.toFixed(3)),
+            z: parseFloat(m.position.z.toFixed(3))
+        };
+    });
+    
+    const json = JSON.stringify(positions, null, 2);
+    navigator.clipboard.writeText(json).then(() => {
+        alert('Скопировано в буфер обмена!\n\n' + json);
+    });
+}
+
+function loadSavedPositions() {
+    const saved = localStorage.getItem('motherboard_markers');
+    if (saved) {
+        const positions = JSON.parse(saved);
+        Object.keys(positions).forEach(id => {
+            const marker = interactiveObjects.find(m => m.userData.id === id);
+            if (marker) {
+                if (positions[id].x !== undefined) marker.position.x = positions[id].x;
+                if (positions[id].y !== undefined) marker.position.y = positions[id].y;
+                if (positions[id].z !== undefined) marker.position.z = positions[id].z;
+            }
+        });
+    }
+}
+</script>
