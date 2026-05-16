@@ -906,19 +906,29 @@ let state = {
 };
 
 function loadState() {
-    const saved = localStorage.getItem('diploma_state');
-    if (saved) {
-        try {
-            state = JSON.parse(saved);
-            document.getElementById('headerName').textContent = state.userName || 'Студент';
-        } catch (e) {
-            console.log('Error loading state');
-        }
-    }
+    fetch('/api/progress')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.visited_components) state.visitedComponents = data.visited_components;
+        if (data.completed_lessons) state.completedLessons = data.completed_lessons;
+        if (data.quest_stats) state.questStats = data.quest_stats;
+        document.getElementById('headerName').textContent = state.userName || 'Студент';
+    })
+    .catch(function(e) {
+        console.log('Error loading state from server');
+    });
 }
 
 function saveState() {
-    localStorage.setItem('diploma_state', JSON.stringify(state));
+    fetch('/api/progress', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            visited_components: state.visitedComponents,
+            completed_lessons: state.completedLessons,
+            quest_stats: state.questStats
+        })
+    });
 }
 
 function showSection(section) {

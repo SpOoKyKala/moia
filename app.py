@@ -77,6 +77,18 @@ def init_db():
     ''')
     
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_state (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE,
+            visited_components TEXT,
+            completed_lessons TEXT,
+            quest_stats TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
@@ -362,19 +374,45 @@ def admin_delete_user(user_id):
     conn.close()
     return redirect(url_for('admin'))
 
-@app.route('/api/progress', methods=['POST'])
-def save_progress():
+@app.route('/api/progress', methods=['GET', 'POST'])
+def progress_api():
     if 'user_id' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
     
-    data = request.get_json()
     conn = get_db_connection()
+    
+    if request.method == 'GET':
+        user_state = conn.execute('SELECT * FROM user_state WHERE user_id = ?', (session['user_id'],)).fetchone()
+        conn.close()
+        if user_state:
+            return jsonify({
+                'visited_components': json.loads(user_state['visited_components']) if user_state['visited_components'] else [],
+                'completed_lessons': json.loads(user_state['completed_lessons']) if user_state['completed_lessons'] else [],
+                'quest_stats': json.loads(user_state['quest_stats']) if user_state['quest_stats'] else {'solved': 0, 'correct': 0}
+            })
+        return jsonify({
+            'visited_components': [],
+            'completed_lessons': [],
+            'quest_stats': {'solved': 0, 'correct': 0}
+        })
+    
+    data = request.get_json()
     cursor = conn.cursor()
     
+    visited = json.dumps(data.get('visited_components', []), ensure_ascii=False)
+    completed = json.dumps(data.get('completed_lessons', []), ensure_ascii=False)
+    quest = json.dumps(data.get('quest_stats', {'solved': 0, 'correct': 0}), ensure_ascii=False)
+    
     cursor.execute('''
-        INSERT OR REPLACE INTO progress (user_id, lesson_id, completed, score, completed_at)
+        INSERT OR REPLACE INTO user_state (user_id, visited_components, completed_lessons, quest_stats, updated_at)
         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-    ''', (session['user_id'], data.get('lesson_id'), data.get('completed', 0), data.get('score', 0)))
+    ''', (session['user_id'], visited, completed, quest))
+    
+    if data.get('lesson_id'):
+        cursor.execute('''
+            INSERT OR REPLACE INTO progress (user_id, lesson_id, completed, score, completed_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (session['user_id'], data.get('lesson_id'), data.get('completed', 0), data.get('score', 0)))
     
     conn.commit()
     conn.close()
